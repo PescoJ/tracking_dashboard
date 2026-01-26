@@ -1,0 +1,6 @@
+name: dashenv
+channels:
+  - defaults
+dependencies:
+  - python=3.13
+prefix: C:\Users\Joe\anaconda3\envs\dashenv
