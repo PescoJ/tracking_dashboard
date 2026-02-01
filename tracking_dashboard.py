@@ -16,8 +16,12 @@ ASSETS_DIR = BASE_DIR / "assets"
 LOGO_FILE = "logo.PNG"
 # Set refresh interval in milliseconds
 refresh_interval = 30_000 #Seconds
-# Initialize the Dash app with Bootstrap theme
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+# Initialize the Dash app with External Stylesheets theme
+external_stylesheets = [
+    dbc.themes.BOOTSTRAP,
+    "https://use.fontawesome.com/releases/v6.4.2/css/all.css",
+]
+app = Dash(__name__, external_stylesheets=external_stylesheets)
 # Load data and show and error if file not found
 last_updated = "Unknown"
 if DATA_FILE.exists():
@@ -55,11 +59,11 @@ app.layout = dbc.Container(
                                 color="primary",
                                 className="border shadow-sm fw-semibold",
                                 children=[
-                                    dbc.DropdownMenuItem("Home", id="project-home", icon="🏠"),
+                                    dbc.DropdownMenuItem(html.I(className="fa-solid fa-house me-2"), "Home", id="project-home"),
                                     dbc.DropdownMenuItem(diverider=True),
-                                    dbc.DropdownMenuItem("Project 1", id="project-one", icon="1️⃣"),
-                                    dbc.DropdownMenuItem("Project 2", id="project-two", icon="2️⃣"),
-                                    dbc.DropdownMenuItem("Project 3", id="project-three", icon="3️⃣"),
+                                    dbc.DropdownMenuItem(html.I(className="fa-solid fa-one me-2"), "Project 1", id="project-one"),
+                                    dbc.DropdownMenuItem(html.I(className="fa-solid fa-two me-2"), "Project 2", id="project-two"),
+                                    dbc.DropdownMenuItem(html.I(className="fa-solid fa-three me-2"), "Project 3", id="project-three"),
                                         ],
                                         ),
                             dbc.DropdownMenu(
@@ -74,10 +78,10 @@ app.layout = dbc.Container(
                                 color="primary",
                                 className="border shadow-sm fw-semibold",
                                 children=[
-                                    dbc.DropdownMenuItem("Admins", id="manage-admin", icon="👑"),
-                                    dbc.DropdownMenuItem("Managers", id="manage-managers", icon="👥"),
-                                    dbc.DropdownMenuItem("Leaders", id="manage-leaders", icon="👥"),
-                                    dbc.DropdownMenuItem("Members", id="manage-members", icon="👤"),
+                                    dbc.DropdownMenuItem(html.I(className="fa-solid fa-user-shield me-2"), "Admins", id="manage-admin"),
+                                    dbc.DropdownMenuItem(html.I(className="fa-solid fa-user-tie me-2"), "Managers", id="manage-managers"),
+                                    dbc.DropdownMenuItem(html.I(className="fa-solid fa-user-group me-2"), "Leaders", id="manage-leaders"),
+                                    dbc.DropdownMenuItem(html.I(className="fa-solid fa-user me-2"), "Members", id="manage-members"),
                                         ],
                                         ),
                         ],
