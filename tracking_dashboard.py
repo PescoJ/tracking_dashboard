@@ -28,14 +28,51 @@ else:
 # Define the layout of the app
 app.layout = dbc.Container(
     [
-        html.Div(
+        dbc.Row(
             [
-                html.Img(
-                    src = app.get_asset_url(LOGO_FILE.name), 
-                    style={'width':'100px', 'height':'auto'}
+                dbc.Col(
+                    html.Img(
+                        src = app.get_asset_url(LOGO_FILE.name), 
+                        style={"height":"70px", "width":"100px"}
                     ),
+                    width="auto",
+                ),
             ],
+            align="left",
+            style={"marginTop": "10px", "marginBottom": "10px"}
         ),
+# Banner: Navigation Buttons for Projects, Tasks, & Users
+        dbc.Row(
+            dbc.Col(
+                dbc.ButtonGroup(
+                    [
+                        dbc.Button("Manage Projects", 
+                                   id="projects-button", 
+                                   color="primary",
+                                   className="border shadow-sm fw-semibold"),
+                        ),
+                        dbc.Button("Manage Tasks", 
+                                   id="tasks-button", 
+                                   color="secondary",
+                                   className="border shadow-sm fw-semibold"),
+                        ),
+                        dbc.Button("Manage Users", 
+                                   id="users-button", 
+                                   color="primary",
+                                   className="border shadow-sm fw-semibold"),
+                        ),
+                    ],
+                    className="w-100, gap-3",
+                    size="lg",
+                ),
+            width=4,
+            style={
+            "marginTop": "10px",
+            "marginBottom": "16px",
+            "padding": "12px",
+            "borderRadius": "10px",
+            "backgroundColor": "#f8f9fa",
+            },
         dcc.Markdown(f"""
             #### Tracking Dashboard
             **Version:** 0.0.1
@@ -55,8 +92,6 @@ app.layout = dbc.Container(
                 )
             ]
         )
-    ], 
     fluid=True,
-)
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8050, debug=True)
