@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "NYC_Synthetic_January_Tracking.xlsx"
 
 ASSETS_DIR = BASE_DIR / "assets"
-LOGO_FILE = ASSETS_DIR / "logo.PNG"
+LOGO_FILE = "logo.PNG"
 # Set refresh interval in milliseconds
 refresh_interval = 30_000 #Seconds
 # Initialize the Dash app with Bootstrap theme
@@ -28,47 +28,51 @@ else:
 # Define the layout of the app
 app.layout = dbc.Container(
     [
+        # Logo
         dbc.Row(
             [
                 dbc.Col(
                     html.Img(
-                        src = app.get_asset_url(LOGO_FILE.name), 
-                        style={"height":"70px", "width":"100px"}
-                    ),
+                        src=app.get_asset_url(LOGO_FILE),
+                        style={"height": "70px", "width": "auto"},
+                            ),
                     width="auto",
-                ),
+                        )
             ],
-            align="left",
-            style={"marginTop": "10px", "marginBottom": "10px"}
-        ),
-    ]
-# Banner: Navigation Buttons for Projects, Tasks, & Users
+            align="center",
+            style={"marginTop": "12px"},
+                ),
+
+        # Banner buttons
         dbc.Row(
             [
                 dbc.Col(
                     dbc.ButtonGroup(
                         [
-                            dbc.Button("Manage Projects", 
-                                   id="projects-button", 
-                                   color="primary",
-                                   className="border shadow-sm fw-semibold"),
-                            ),
-                            dbc.Button("Manage Tasks", 
-                                   id="tasks-button", 
-                                   color="secondary",
-                                   className="border shadow-sm fw-semibold"),
-                            ),
-                            dbc.Button("Manage Users", 
-                                   id="users-button", 
-                                   color="primary",
-                                   className="border shadow-sm fw-semibold"),
-                            ),
+                            dbc.Button(
+                                "Manage Projects",
+                                id="projects-button",
+                                color="#1c7fe2",
+                                className="border shadow-sm fw-semibold",
+                                        ),
+                            dbc.Button(
+                                "Manage Task",
+                                id="tasks-button",
+                                color="#1c7fe2",
+                                className="border shadow-sm fw-semibold",
+                                        ),
+                            dbc.Button(
+                                "Manage Users",
+                                id="users-button",
+                                color="#1c7fe2",
+                                className="border shadow-sm fw-semibold",
+                                        ),
                         ],
                         className="w-100 gap-3",
                         size="lg",
-                    ),
-                    width=4,
-                )
+                ),
+                    width=12,
+                    )
             ],
             style={
                 "marginTop": "10px",
@@ -78,10 +82,6 @@ app.layout = dbc.Container(
                 "backgroundColor": "#f8f9fa",
             },
         ),
-        html.Div(id="page-content"),
-    ],
-    fluid=True,
-)
 # Dashboard Title and Last Updated Info
         dcc.Markdown(f"""
             #### Tracking Dashboard
@@ -102,6 +102,8 @@ app.layout = dbc.Container(
                 )
             ]
         )
-    fluid=True,
+    ]
+)
+fluid=True,
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8050, debug=True)
