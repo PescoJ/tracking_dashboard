@@ -41,38 +41,48 @@ app.layout = dbc.Container(
             align="left",
             style={"marginTop": "10px", "marginBottom": "10px"}
         ),
+    ]
 # Banner: Navigation Buttons for Projects, Tasks, & Users
         dbc.Row(
-            dbc.Col(
-                dbc.ButtonGroup(
-                    [
-                        dbc.Button("Manage Projects", 
+            [
+                dbc.Col(
+                    dbc.ButtonGroup(
+                        [
+                            dbc.Button("Manage Projects", 
                                    id="projects-button", 
                                    color="primary",
                                    className="border shadow-sm fw-semibold"),
-                        ),
-                        dbc.Button("Manage Tasks", 
+                            ),
+                            dbc.Button("Manage Tasks", 
                                    id="tasks-button", 
                                    color="secondary",
                                    className="border shadow-sm fw-semibold"),
-                        ),
-                        dbc.Button("Manage Users", 
+                            ),
+                            dbc.Button("Manage Users", 
                                    id="users-button", 
                                    color="primary",
                                    className="border shadow-sm fw-semibold"),
-                        ),
-                    ],
-                    className="w-100, gap-3",
-                    size="lg",
-                ),
-            width=4,
+                            ),
+                        ],
+                        className="w-100 gap-3",
+                        size="lg",
+                    ),
+                    width=4,
+                )
+            ],
             style={
-            "marginTop": "10px",
-            "marginBottom": "16px",
-            "padding": "12px",
-            "borderRadius": "10px",
-            "backgroundColor": "#f8f9fa",
+                "marginTop": "10px",
+                "marginBottom": "16px",
+                "padding": "12px",
+                "borderRadius": "10px",
+                "backgroundColor": "#f8f9fa",
             },
+        ),
+        html.Div(id="page-content"),
+    ],
+    fluid=True,
+)
+# Dashboard Title and Last Updated Info
         dcc.Markdown(f"""
             #### Tracking Dashboard
             **Version:** 0.0.1
