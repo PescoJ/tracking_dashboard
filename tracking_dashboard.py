@@ -49,23 +49,36 @@ app.layout = dbc.Container(
                 dbc.Col(
                     dbc.ButtonGroup(
                         [
-                            dbc.Button(
+                            dbc.DropdownMenu(
                                 "Manage Projects",
                                 id="projects-button",
-                                color="#1c7fe2",
+                                color="primary",
                                 className="border shadow-sm fw-semibold",
+                                children=[
+                                    dbc.DropdownMenuItem("Home", id="project-home", icon="🏠"),
+                                    dbc.DropdownMenuItem(diverider=True),
+                                    dbc.DropdownMenuItem("Project 1", id="project-one", icon="1️⃣"),
+                                    dbc.DropdownMenuItem("Project 2", id="project-two", icon="2️⃣"),
+                                    dbc.DropdownMenuItem("Project 3", id="project-three", icon="3️⃣"),
+                                        ],
                                         ),
-                            dbc.Button(
-                                "Manage Task",
+                            dbc.DropdownMenu(
+                                "Manage Tasks",
                                 id="tasks-button",
-                                color="#1c7fe2",
+                                color="primary",
                                 className="border shadow-sm fw-semibold",
                                         ),
-                            dbc.Button(
+                            dbc.DropdownMenu(
                                 "Manage Users",
                                 id="users-button",
-                                color="#1c7fe2",
+                                color="primary",
                                 className="border shadow-sm fw-semibold",
+                                children=[
+                                    dbc.DropdownMenuItem("Admins", id="manage-admin", icon="👑"),
+                                    dbc.DropdownMenuItem("Managers", id="manage-managers", icon="👥"),
+                                    dbc.DropdownMenuItem("Leaders", id="manage-leaders", icon="👥"),
+                                    dbc.DropdownMenuItem("Members", id="manage-members", icon="👤"),
+                                        ],
                                         ),
                         ],
                         className="w-100 gap-3",
