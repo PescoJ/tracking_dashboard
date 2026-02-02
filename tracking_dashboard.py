@@ -36,7 +36,7 @@ def crime_terror_histogram(df):
     fig = go.Figure()
     fig.add_trace(
         go.Histogram(
-            x=df["Risk_Score_Crime"],
+            x=df["Crime Tendency"],
             name='Crime Tendency',
                xbins=dict(start=0, 
                         end=100,                            
@@ -47,7 +47,7 @@ def crime_terror_histogram(df):
             )
     fig.add_trace(
         go.Histogram(
-            x=df["Risk_Score_Terror"],
+            x=df["Terror Tendency"],
             name='Terror Tendency',
             xbins=dict(start=0, 
                     end=100, 
@@ -72,7 +72,7 @@ def crime_terror_histogram(df):
 def crime_vs_terror_scatter(df):
     x_col = "Crime Tendency"
     y_col = "Terror Tendency"
-    id_col = "Person_ID"
+    id_col = "ID Number"
 
     plot_df = df.copy()
     plot_df[x_col] = pd.to_numeric(plot_df[x_col], errors='coerce')
