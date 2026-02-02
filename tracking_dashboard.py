@@ -70,8 +70,8 @@ def crime_terror_histogram(df):
             )
     return fig
 def crime_vs_terror_scatter(df):
-    x_col = "Risk_Score_Crime"
-    y_col = "Risk_Score_Terror"
+    x_col = "Crime Tendency"
+    y_col = "Terror Tendency"
     id_col = "Person_ID"
 
     plot_df = df.copy()
