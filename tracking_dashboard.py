@@ -97,15 +97,16 @@ def crime_vs_terror_scatter(df):
     )
     return fig
 # MGRS-like Coordinate Parser
-def parse_mgrs_like_xy(s: str):
+def parse_mgrs_like_xy(s):
     if pd.isna(s):
         return (None, None)
-    nums = re.findall(r"\d+", str(s))
-    if len(nums) < 2:
-        return (None, None)
-    x = int(nums[-2])
-    y = int(nums[-1])
-    return (x, y)
+    text = str(s)
+    nums = re.findall(r"\b(\d{5})\b", text)
+    if len(nums) >= 2:
+        x = int(nums[0])
+        y = int(nums[1])
+        return (x, y)
+    return (None, None)
 # Build Long Location DataFrame
 def build_long_location_df(df_people):
     day_cols = [c for c in df_people.columns if c.lower().startswith("location_")]
@@ -122,6 +123,7 @@ def build_long_location_df(df_people):
         var_name = "day_col",
         value_name = "Location",
     )
+
     long_df["day"] = long_df["day_col"].str.extract(r"(\d+)").astype(int)
 
     xy = long_df["Location"].apply(parse_mgrs_like_xy)
@@ -347,9 +349,9 @@ app.layout = dbc.Container(
                             ],
                             className="mb-3",
                         ),
+                        dcc.Graph(id="movement-heatmap", style={"height": "650px"}),
                     ],
                 ),
-                dcc.Graph(id="movement-heatmap", style={"height": "650px"}),
             ],
         ),
     ],
