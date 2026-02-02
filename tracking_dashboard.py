@@ -130,6 +130,7 @@ def build_long_location_df(df_people):
 
     long_df = long_df.dropna(subset=["x", "y"]).copy()
     return long_df
+# Build the long format DataFrame for locations
 long_df = build_long_location_df(df)
 # Heat Map of People
 def make_heatmap(filtered_long_df, bin_size=5):
@@ -149,8 +150,8 @@ def make_heatmap(filtered_long_df, bin_size=5):
     return fig
 @app.callback(
     Output("movement-heatmap", "figure"),
-    Input("crime-range", "value"),
-    Input("terror-range", "value"),
+    Input("crime-range-slider", "value"),
+    Input("terror-range-slider", "value"),
     Input("day-slider", "value"),
 )
 def update_heatmap(crime_range, terror_range, day_value):
@@ -200,6 +201,7 @@ def update_heatmap(crime_range, terror_range, day_value):
         fig = px.scatter(title=f"Heatmap error: {type(e).__name__}: {e}")
         fig.update_layout(margin=dict(l=40, r=20, t=60, b=40))
         return fig
+    return make_heatmap(filtered)
 # Define the layout of the app
 app.layout = dbc.Container(
     [
@@ -322,6 +324,7 @@ app.layout = dbc.Container(
                                             id="crime-range-slider",
                                             min=1, max=100, step=1,
                                             value=[1, 100],
+                                            marks={1: "1", 25: "25", 50: "50", 75: "75", 100: "100"},
                                             tooltip={"placement":"bottom", "always_visible":False},
                                         ),
                                     ],
@@ -334,6 +337,7 @@ app.layout = dbc.Container(
                                             id="terror-range-slider",
                                             min=1, max=100, step=1,
                                             value=[1, 100],
+                                            marks={1: "1", 25: "25", 50: "50", 75: "75", 100: "100"},
                                             tooltip={"placement":"bottom", "always_visible":False},
                                         ),
                                     ],
