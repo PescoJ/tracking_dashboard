@@ -172,37 +172,25 @@ def update_heatmap(crime_range, terror_range, day_value):
             (long_df[terror_col].between(tmin, tmax)) &
             day_mask
         ].copy()
-
         filtered["x"] = pd.to_numeric(filtered["x"], errors='coerce')
         filtered["y"] = pd.to_numeric(filtered["y"], errors='coerce')
         filtered = filtered.dropna(subset=["x", "y"])
 
         if filtered.empty:
             fig = px.scatter(title="No data available for the selected filters.")
-            fig.update_layout(
-                xaxis_title="Grid X",
-                yaxis_title="Grid Y",
+            fig.update_layout(height=650,
                 margin=dict(l=40, r=20, t=60, b=40),
             )
             return fig
-        fig = px.density_heatmap(
-            filtered,
-            x="x",
-            y="y",
-            title="Movement Density (Noon Locations)",
-        )
-        fig.update_layout(
-            xaxis_title="Grid X",
-            yaxis_title="Grid Y",
-            margin=dict(l=40, r=20, t=60, b=40),
-        )
+        
+        fig = make_heatmap(filtered)
+        fig.update_layout(height=650)
         return fig
-
+    
     except Exception as e:
         fig = px.scatter(title=f"Heatmap error: {type(e).__name__}: {e}")
         fig.update_layout(margin=dict(l=40, r=20, t=60, b=40))
         return fig
-    return make_heatmap(filtered)
 # Define the layout of the app
 app.layout = dbc.Container(
     [
