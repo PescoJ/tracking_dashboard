@@ -1,6 +1,7 @@
 # Inport necessary libraries
 import time
 from pathlib import Path
+import re
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -31,7 +32,8 @@ if DATA_FILE.exists():
     last_updated = pd.Timestamp(mtime).strftime("%Y-%m-%d %H:%M")
 else:
     last_updated = f"File not found: {DATA_FILE}"
-# Defining a function to create histogram
+## Defining the functions needed for visualizations
+# Crime and Terror Histogram
 def crime_terror_histogram(df):
     fig = go.Figure()
     fig.add_trace(
@@ -69,6 +71,7 @@ def crime_terror_histogram(df):
                 margin=dict(l=40, r=20, t=60, b=40),
             )
     return fig
+# Crime vs Terror Scatter Plot
 def crime_vs_terror_scatter(df):
     x_col = "Crime Tendency"
     y_col = "Terror Tendency"
@@ -92,6 +95,76 @@ def crime_vs_terror_scatter(df):
         margin=dict(l=40, r=20, t=60, b=40),
     )
     return fig
+# MGRS-like Coordinate Parser
+def parse_mgrs_like_xy(s: str):
+    if pd.isna(s):
+        return (None, None)
+    nums = re.findall(r"\d+", str(s))
+    if len(nums) < 2:
+        return (None, None)
+    x = int(nums[-2])
+    y = int(nums[-1])
+    return (x, y)
+# Build Long Location DataFrame
+def build_long_location_df(df_people):
+    day_cols = [c for c in df_people.columns if c.lower().startswith("Location_")]
+    if not day_cols:
+        raise ValueError("No location columns found in the dataframe.")
+    
+    id_col = "ID Number"
+    crime_col = "Crime Tendency"
+    terror_col = "Terror Tendency"
+
+    long_df = long_df.melt(
+        id_vars=[id_col, crime_col, terror_col],
+        value_vars = day_cols,
+        var_name = "day_col",
+        value_name = "Location",
+    )
+    long_df["day"] = long_df["day_col"].str.extract(r"(\d+)").astype(int)
+
+    xy = long_df["Location"].apply(parse_mgrs_like_xy)
+    long_df["x"] = xy.apply(lambda t: t[0])
+    long_df["y"] = xy.apply(lambda t: t[1])
+
+    long_df = long_df.dropna(subset=["x", "y"]).copy()
+    return long_df
+# Heat Map of People
+def make_heatmap(filtered_long_df, bin_size=5):
+    fig = px.density_heatmap(
+        filtered_long_df,
+        x="x",
+        y="y",
+        nbinsx=max(5, int((filtered_long_df["x"].max() - filtered_long_df["x"].min()) / bin_size)),
+        nbinsy=max(5, int((filtered_long_df["y"].max() - filtered_long_df["y"].min()) / bin_size)),
+        title = "Movement Density (Noon Locations)",
+    )
+    fig.update_layout(
+        xaxis_title="X Coordinate",
+        yaxis_title="Y Coordinate",
+        margin=dict(l=40, r=20, t=60, b=40),
+    )
+    return fig
+@app.callback(
+    Output("movement-heatmap", "figure"),
+    Input("crime-range-slider", "value"),
+    Input("terror-range-slider", "value"),
+    Input("day-slider", "value"),
+)
+def update_heatmap(crime_range, terror_range, day_range):
+    cmin, cmax = crime_range
+    tmin, tmax = terror_range
+
+    filtered = long_df[
+        (long_df["Crime Tendency"].between(cmin, cmax)) &
+        (long_df["Terror Tendency"].between(tmin, tmax)) &
+        (long_df["day"].between(day_range[0], day_range[1]))
+    ]
+
+    if filtered.empty:
+        fig = px.scatter(title="No data available for the selected filters.")
+        fig.update_layout(margin=dict(l=40, r=20, t=60, b=40))
+        return fig
 # Define the layout of the app
 app.layout = dbc.Container(
     [
@@ -204,13 +277,55 @@ app.layout = dbc.Container(
                 dbc.Tab(
                     label="Geographical Analysis",
                     tab_id="tab-geographical",
-                    children=[html.Div("Geographical Analysis Content")],
+                    children=[
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.Div("Crime Score Filter"),
+                                        dcc.RangeSlider(
+                                            id="crime-range-slider",
+                                            min=1, max=100, step=1,
+                                            value=[1, 100],
+                                            tooltip={"placement":"bottom", "always_visible":False},
+                                        ),
+                                    ],
+                                    md=4,
+                                ),
+                                dbc.Col(
+                                    [
+                                        html.Div("Terror Score Filter"),
+                                        dcc.RangeSlider(
+                                            id="terror-range-slider",
+                                            min=1, max=100, step=1,
+                                            value=[1, 100],
+                                            tooltip={"placement":"bottom", "always_visible":False},
+                                        ),
+                                    ],
+                                    md=4,
+                                ),
+                                dbc.Col(
+                                    [
+                                    html.Div("Day Selector"),
+                                    dcc.RangeSlider(
+                                        id="day-slider",
+                                        min=1, max=31, step=1,
+                                        value=[1, 31],
+                                        marks={1: "1", 8: "8", 15: "15", 22: "22", 31: "31"},
+                                            ),
+                                    ],
+                                ),
+                            ],
+                            md=4,
+                            ),
+                        ],
+                        className="mb-3",
+                    ),
+                        dcc.Graph(id="movement-heatmap"),
+                    ],
                 ),
             ],
-
-        ),
-    ],
-)
+        )
 fluid=True,
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8050, debug=True)
