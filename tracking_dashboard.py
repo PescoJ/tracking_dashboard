@@ -32,6 +32,7 @@ if DATA_FILE.exists():
     last_updated = pd.Timestamp(mtime).strftime("%Y-%m-%d %H:%M")
 else:
     last_updated = f"File not found: {DATA_FILE}"
+df.columns = df.columns.str.strip()
 ## Defining the functions needed for visualizations
 # Crime and Terror Histogram
 def crime_terror_histogram(df):
@@ -107,15 +108,15 @@ def parse_mgrs_like_xy(s: str):
     return (x, y)
 # Build Long Location DataFrame
 def build_long_location_df(df_people):
-    day_cols = [c for c in df_people.columns if c.lower().startswith("Location_")]
+    day_cols = [c for c in df_people.columns if c.lower().startswith("location_")]
     if not day_cols:
-        raise ValueError("No location columns found in the dataframe.")
+        raise ValueError(f"No location columns found. Columns: {df_people.columns.tolist()}")
     
     id_col = "ID Number"
     crime_col = "Crime Tendency"
     terror_col = "Terror Tendency"
 
-    long_df = long_df.melt(
+    long_df = df_people.melt(
         id_vars=[id_col, crime_col, terror_col],
         value_vars = day_cols,
         var_name = "day_col",
@@ -129,6 +130,7 @@ def build_long_location_df(df_people):
 
     long_df = long_df.dropna(subset=["x", "y"]).copy()
     return long_df
+long_df = build_long_location_df(df)
 # Heat Map of People
 def make_heatmap(filtered_long_df, bin_size=5):
     fig = px.density_heatmap(
@@ -140,29 +142,62 @@ def make_heatmap(filtered_long_df, bin_size=5):
         title = "Movement Density (Noon Locations)",
     )
     fig.update_layout(
-        xaxis_title="X Coordinate",
-        yaxis_title="Y Coordinate",
+        xaxis_title="Grid X",
+        yaxis_title="Grid Y",
         margin=dict(l=40, r=20, t=60, b=40),
     )
     return fig
 @app.callback(
     Output("movement-heatmap", "figure"),
-    Input("crime-range-slider", "value"),
-    Input("terror-range-slider", "value"),
+    Input("crime-range", "value"),
+    Input("terror-range", "value"),
     Input("day-slider", "value"),
 )
-def update_heatmap(crime_range, terror_range, day_range):
-    cmin, cmax = crime_range
-    tmin, tmax = terror_range
+def update_heatmap(crime_range, terror_range, day_value):
+    try:
+        cmin, cmax = crime_range
+        tmin, tmax = terror_range
+        if isinstance(day_value, (list, tuple)) and len(day_value) == 2:
+            day_min, day_max = day_value
+            day_mask = long_df["day"].between(day_min, day_max)
+        else:
+            day_mask = (long_df["day"] == int(day_value))
+        crime_col = "Crime Tendency"
+        terror_col = "Terror Tendency"
 
-    filtered = long_df[
-        (long_df["Crime Tendency"].between(cmin, cmax)) &
-        (long_df["Terror Tendency"].between(tmin, tmax)) &
-        (long_df["day"].between(day_range[0], day_range[1]))
-    ]
+        filtered = long_df[
+            (long_df[crime_col].between(cmin, cmax)) &
+            (long_df[terror_col].between(tmin, tmax)) &
+            day_mask
+        ].copy()
 
-    if filtered.empty:
-        fig = px.scatter(title="No data available for the selected filters.")
+        filtered["x"] = pd.to_numeric(filtered["x"], errors='coerce')
+        filtered["y"] = pd.to_numeric(filtered["y"], errors='coerce')
+        filtered = filtered.dropna(subset=["x", "y"])
+
+        if filtered.empty:
+            fig = px.scatter(title="No data available for the selected filters.")
+            fig.update_layout(
+                xaxis_title="Grid X",
+                yaxis_title="Grid Y",
+                margin=dict(l=40, r=20, t=60, b=40),
+            )
+            return fig
+        fig = px.density_heatmap(
+            filtered,
+            x="x",
+            y="y",
+            title="Movement Density (Noon Locations)",
+        )
+        fig.update_layout(
+            xaxis_title="Grid X",
+            yaxis_title="Grid Y",
+            margin=dict(l=40, r=20, t=60, b=40),
+        )
+        return fig
+
+    except Exception as e:
+        fig = px.scatter(title=f"Heatmap error: {type(e).__name__}: {e}")
         fig.update_layout(margin=dict(l=40, r=20, t=60, b=40))
         return fig
 # Define the layout of the app
@@ -314,18 +349,18 @@ app.layout = dbc.Container(
                                         marks={1: "1", 8: "8", 15: "15", 22: "22", 31: "31"},
                                             ),
                                     ],
+                                    md=4
                                 ),
                             ],
-                            md=4,
-                            ),
-                        ],
-                        className="mb-3",
-                    ),
-                        dcc.Graph(id="movement-heatmap"),
+                            className="mb-3",
+                        ),
                     ],
                 ),
+                dcc.Graph(id="movement-heatmap"),
             ],
-        )
+        ),
+    ],
+)
 fluid=True,
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8050, debug=True)
