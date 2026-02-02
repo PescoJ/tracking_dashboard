@@ -193,6 +193,8 @@ def update_heatmap(crime_range, terror_range, day_value):
         fig = px.scatter(title=f"Heatmap error: {type(e).__name__}: {e}")
         fig.update_layout(margin=dict(l=40, r=20, t=60, b=40))
         return fig
+# Build the long format DataFrame for locations
+long_df = build_long_location_df(df)
 # Define the layout of the app
 app.layout = dbc.Container(
     [
