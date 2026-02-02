@@ -101,10 +101,19 @@ def parse_mgrs_like_xy(s):
     if pd.isna(s):
         return (None, None)
     text = str(s)
-    nums = re.findall(r"\b(\d{5})\b", text)
+    nums = re.findall(r"\b(\d{4,6})\b", text)
     if len(nums) >= 2:
         x = int(nums[0])
         y = int(nums[1])
+        return (x, y)
+    # Alternative pattern
+    nums2 = re.findall(r"\d{8,12}", text)
+    if nums2:
+        token = nums2[-1]
+        if len(token) >= 10:
+            tail = token [-10:]
+            x = int(tail[:5])
+            y = int(tail[5:])
         return (x, y)
     return (None, None)
 # Build Long Location DataFrame
@@ -272,7 +281,7 @@ app.layout = dbc.Container(
 # Dashboard Title and Last Updated Info
         dcc.Markdown(f"""
             #### Tracking Dashboard
-            **Version:** 0.0.1
+            **Version:** 0.1.0
             **Last Updated:** {last_updated},"""
         ),
         dcc.Interval(
