@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
+from pexpect import EOF
 import plotly.graph_objects as go
 import plotly.express as px
 import altair as alt
@@ -40,7 +41,8 @@ def crime_terror_histogram(df):
             x=df["Crime_Tendency"],
             name='Crime Tendency',
                xbins=dict(start=0, 
-                        end=100,                            size=10
+                        end=100,                            
+                        size=10
                         ),
                     opacity=0.75,
                 )
@@ -156,18 +158,18 @@ app.layout = dbc.Container(
         ),
         dbc.Tabs(
             id="main-tabs",
-            value="tab-distribution",
+            value="primary-tab",
             children=[
                 dbc.Tab(
                     label="Total Distribution", 
-                    value="tab-distribution"
+                    value="tab-distribution",
                     children=[
-                        dcc.Graph(id="crime-terror-histogram",
-                                  figure=crime_terror_histogram(df),
-                                    )
-                            ],
-                        ),
+                        dcc.Graph(
+                            id="crime-terror-histogram",
+                            figure=crime_terror_histogram(df),
+                        )
                     ],
+                ),
                 dbc.Tab(
                     label="Patterns in Crime and Terror",
                     value="tab-patterns",
@@ -178,7 +180,9 @@ app.layout = dbc.Container(
                     value="tab-geographical",
                     children=[html.Div("Geographical Analysis Content")],
                 ),
-            ),
+            ],
+
+        ),
     ],
 )
 fluid=True,
