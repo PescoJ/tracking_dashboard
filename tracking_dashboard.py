@@ -133,13 +133,14 @@ def build_long_location_df(df_people):
 # Build the long format DataFrame for locations
 long_df = build_long_location_df(df)
 # Heat Map of People
-def make_heatmap(filtered_long_df, bin_size=5):
+def make_heatmap(filtered_long_df, nbins=75):
     fig = px.density_heatmap(
         filtered_long_df,
         x="x",
         y="y",
-        nbinsx=max(5, int((filtered_long_df["x"].max() - filtered_long_df["x"].min()) / bin_size)),
-        nbinsy=max(5, int((filtered_long_df["y"].max() - filtered_long_df["y"].min()) / bin_size)),
+        nbinsx=nbins,
+        nbinsy=nbins,
+        histfunc="count",
         title = "Movement Density (Noon Locations)",
     )
     fig.update_layout(
@@ -360,7 +361,7 @@ app.layout = dbc.Container(
                         ),
                     ],
                 ),
-                dcc.Graph(id="movement-heatmap"),
+                dcc.Graph(id="movement-heatmap", style={"height": "650px"}),
             ],
         ),
     ],
