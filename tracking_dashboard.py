@@ -3,7 +3,6 @@ import time
 from pathlib import Path
 import pandas as pd
 import matplotlib.pyplot as plt
-from pexpect import EOF
 import plotly.graph_objects as go
 import plotly.express as px
 import altair as alt
@@ -13,7 +12,6 @@ import dash_bootstrap_components as dbc
 # Setting the file paths
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "NYC_Synthetic_January_Tracking.xlsx"
-
 ASSETS_DIR = BASE_DIR / "assets"
 LOGO_FILE = "logo.PNG"
 
@@ -38,7 +36,7 @@ def crime_terror_histogram(df):
     fig = go.Figure()
     fig.add_trace(
         go.Histogram(
-            x=df["Crime_Tendency"],
+            x=df["Risk_Score_Crime"],
             name='Crime Tendency',
                xbins=dict(start=0, 
                         end=100,                            
@@ -49,7 +47,7 @@ def crime_terror_histogram(df):
             )
     fig.add_trace(
         go.Histogram(
-            x=df["Terror_Tendency"],
+            x=df["Risk_Score_Terror"],
             name='Terror Tendency',
             xbins=dict(start=0, 
                     end=100, 
@@ -70,6 +68,29 @@ def crime_terror_histogram(df):
                 legend_title_text='Tendency Type',
                 margin=dict(l=40, r=20, t=60, b=40),
             )
+    return fig
+def crime_vs_terror_scatter(df):
+    x_col = "Risk_Score_Crime"
+    y_col = "Risk_Score_Terror"
+    id_col = "Person_ID"
+
+    plot_df = df.copy()
+    plot_df[x_col] = pd.to_numeric(plot_df[x_col], errors='coerce')
+    plot_df[y_col] = pd.to_numeric(plot_df[y_col], errors='coerce')
+    
+    fig = px.scatter(
+        plot_df,
+        x = x_col,
+        y = y_col,
+        hover_name = id_col,
+        hover_data = {x_col: True, y_col: True, id_col: True},
+        title="Crime vs Terror Tendency by Person",
+    )
+    fig.update_layout(
+        xaxis_title="Crime Tendency Score",
+        yaxis_title="Terror Tendency Score",
+        margin=dict(l=40, r=20, t=60, b=40),
+    )
     return fig
 # Define the layout of the app
 app.layout = dbc.Container(
@@ -158,11 +179,11 @@ app.layout = dbc.Container(
         ),
         dbc.Tabs(
             id="main-tabs",
-            value="primary-tab",
+            active_tab="primary-tab",
             children=[
                 dbc.Tab(
                     label="Total Distribution", 
-                    value="tab-distribution",
+                    tab_id="tab-distribution",
                     children=[
                         dcc.Graph(
                             id="crime-terror-histogram",
@@ -172,12 +193,17 @@ app.layout = dbc.Container(
                 ),
                 dbc.Tab(
                     label="Patterns in Crime and Terror",
-                    value="tab-patterns",
-                    children=[html.Div("Patterns in Crime and Terror Content")],
+                    tab_id="tab-patterns",
+                    children=[
+                        dcc.Graph(
+                            id="crime-vs-terror-scatter",
+                            figure=crime_vs_terror_scatter(df),
+                        )
+                    ],
                 ),
                 dbc.Tab(
                     label="Geographical Analysis",
-                    value="tab-geographical",
+                    tab_id="tab-geographical",
                     children=[html.Div("Geographical Analysis Content")],
                 ),
             ],
