@@ -143,21 +143,25 @@ def build_long_location_df(df_people):
     return long_df
 # Build the long format DataFrame for locations
 long_df = build_long_location_df(df)
+# Precompute global min and max for x and y
+xmin, xmax = long_df["x"].quantile([0.01, 0.99]).tolist()
+ymin, ymax = long_df["y"].quantile([0.01, 0.99]).tolist()
 # Heat Map of People
-def make_heatmap(filtered_long_df, nbins=75):
-    fig = px.density_heatmap(
-        filtered_long_df,
-        x="x",
-        y="y",
-        nbinsx=nbins,
-        nbinsy=nbins,
-        histfunc="count",
-        title = "Movement Density (Noon Locations)",
+def make_heatmap(filtered_long_df, xmin, xmax, ymin, ymax, nbins=75):
+    fig = go.Figure(
+        data=go.Histogram2d(
+            x=filtered_long_df["x"].astype(float),
+            y=filtered_long_df["y"].astype(float),
+            nbinsx=nbins,
+            nbinsy=nbins,
+        )
     )
     fig.update_layout(
-        xaxis_title="Grid X",
-        yaxis_title="Grid Y",
+        title = "Movement Density (Noon Locations)",
+        height = 650,
         margin=dict(l=40, r=20, t=60, b=40),
+        xaxis=dict(title="Eastrange (40000m to 50000m)", range=[xmin, xmax], type="linear"),
+        yaxis=dict(title="Northrange (50000m to 65000m)", range=[ymin, ymax], type="linear"),
     )
     return fig
 @app.callback(
@@ -194,7 +198,7 @@ def update_heatmap(crime_range, terror_range, day_value):
             )
             return fig
         
-        fig = make_heatmap(filtered)
+        fig = make_heatmap(filtered, xmin, xmax, ymin, ymax, nbins=75)
         fig.update_layout(height=650)
         return fig
     
@@ -353,7 +357,19 @@ app.layout = dbc.Container(
                                         min=1, max=31, step=1,
                                         value=[1, 31],
                                         marks={1: "1", 8: "8", 15: "15", 22: "22", 31: "31"},
-                                            ),
+                                    ),
+                                    html.Div("Mode", style={"marginTop": "10px"}),
+                                    dcc.RadioItems(
+                                        id="day-mode",
+                                        options=[
+                                            {"label": "Single Day", "value": "single"},
+                                            {"label": "Cumulative Range", "value": "range"},
+                                        ],
+                                        value="range",
+                                        inline=True,
+                                        style={"marginRight": "6px", "marginLeft": "12px"},
+                                        ),
+                                        html.Div(id="point-count", style={"fontWeight": "600", "marginTop": "8px"}),
                                     ],
                                     md=4
                                 ),
@@ -366,7 +382,8 @@ app.layout = dbc.Container(
             ],
         ),
     ],
-)
+)    
+
 fluid=True,
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8050, debug=True)
