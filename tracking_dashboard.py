@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
 import altair as alt
-from dash import Dash, dcc, html, Input, Output
+from dash import Dash, dcc, html, Input, Output, State, no_update
 import dash_bootstrap_components as dbc
 # Setting the file path and refresh interval
 # Setting the file paths
@@ -20,11 +20,10 @@ df = pd.read_excel(DATA_FILE, sheet_name="January_Tracking")
 # Set refresh interval in milliseconds
 refresh_interval = 30_000 #Seconds
 # Initialize the Dash app with External Stylesheets theme
-external_stylesheets = [
-    dbc.themes.BOOTSTRAP,
-    "https://use.fontawesome.com/releases/v6.4.2/css/all.css",
+external_stylesheets = [dbc.themes.BOOTSTRAP,
+                        "https://use.fontawesome.com/releases/v6.4.2/css/all.css",
 ]
-app = Dash(__name__, external_stylesheets=external_stylesheets)
+app = Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 # Load data and show and error if file not found
 last_updated = "Unknown"
 if DATA_FILE.exists():
@@ -164,8 +163,59 @@ def make_heatmap(filtered_long_df, xmin, xmax, ymin, ymax, nbins=75):
         yaxis=dict(title="Northrange (50000m to 65000m)", range=[ymin, ymax], type="linear"),
     )
     return fig
+# Callbacks for interactive components
+@app.callback(
+    Output("day-state", "data"),
+    Input("day-slider", "value"),
+    State("day-mode", "value"),
+    State("day-state", "data"),
+    prevent_initial_call=True,
+)
+# Store day value based on mode
+def remember_day_value(day_value, day_mode, data):
+    data = data or {"single": 1, "range": [1, 31]}
+    if day_mode == "single":
+        try:
+            data["single"] = int(day_value)
+        except Exception:
+            pass
+    else:
+        if isinstance(day_value, (list, tuple)) and len(day_value) == 2:
+            data["range"] = [int(day_value[0]), int(day_value[1])]
+    return data
+# Adjust day slider based on mode
+@app.callback(
+    Output("day-slider-container", "children"),
+    Input("day-mode", "value"),
+    State("day-state", "data")
+)
+def render_day_slider(day_mode, data):
+    data = data or {"single": 1, "range": [1, 31]}
+    single_day = int(data.get("single", 1))
+    day_range = data.get("range", [1, 31])
+
+    if day_mode == "single":
+        return dcc.Slider(
+            id="day-slider",
+            min=1, max=31, step=1,
+            value=single_day,
+            marks={1: "1", 8: "8", 15: "15", 22: "22", 31: "31"},
+            tooltip={"placement":"bottom", "always_visible":False},
+        )
+    if not (isinstance(day_range, (list, tuple)) and len(day_range) == 2):
+        day_range = [1, 31]
+
+    return dcc.RangeSlider(
+        id="day-slider",
+        min=1, max=31, step=1,
+        value=[int(day_range[0]), int(day_range[1])],
+        marks={1: "1", 8: "8", 15: "15", 22: "22", 31: "31"},
+        tooltip={"placement":"bottom", "always_visible":False},
+    )
+# Callback to update the heatmap based on filters and day mode
 @app.callback(
     Output("movement-heatmap", "figure"),
+    Output("point-count", "children"),
     Input("crime-range-slider", "value"),
     Input("terror-range-slider", "value"),
     Input("day-slider", "value"),
@@ -174,40 +224,51 @@ def update_heatmap(crime_range, terror_range, day_value):
     try:
         cmin, cmax = crime_range
         tmin, tmax = terror_range
-        if isinstance(day_value, (list, tuple)) and len(day_value) == 2:
-            day_min, day_max = day_value
-            day_mask = long_df["day"].between(day_min, day_max)
-        else:
-            day_mask = (long_df["day"] == int(day_value))
+
         crime_col = "Crime Tendency"
         terror_col = "Terror Tendency"
+
+        if isinstance(day_value, (list, tuple)) and len(day_value) == 2:
+            day_min, day_max = map(int, day_value)
+            day_mask = long_df["day"].between(day_min, day_max)
+            day_label = f"Days: {day_min}-{day_max}"
+        else:
+            d = int(day_value)
+            day_mask = (long_df["day"] == d)
+            day_label = f"Day: {d}"
 
         filtered = long_df[
             (long_df[crime_col].between(cmin, cmax)) &
             (long_df[terror_col].between(tmin, tmax)) &
             day_mask
         ].copy()
+
         filtered["x"] = pd.to_numeric(filtered["x"], errors='coerce')
         filtered["y"] = pd.to_numeric(filtered["y"], errors='coerce')
         filtered = filtered.dropna(subset=["x", "y"])
 
+        count_text = f"Points shown {len(filtered)} | {day_label}"
+
         if filtered.empty:
             fig = px.scatter(title="No data available for the selected filters.")
-            fig.update_layout(height=650,
+            fig.update_layout(
+                height=650,
+                xaxis=dict(range=[xmin, xmax]),
+                yaxis=dict(range=[ymin, ymax]),              
                 margin=dict(l=40, r=20, t=60, b=40),
             )
-            return fig
+            return fig, count_text
         
         fig = make_heatmap(filtered, xmin, xmax, ymin, ymax, nbins=75)
         fig.update_layout(height=650)
-        return fig
+        return fig, count_text
     
     except Exception as e:
         fig = px.scatter(title=f"Heatmap error: {type(e).__name__}: {e}")
-        fig.update_layout(margin=dict(l=40, r=20, t=60, b=40))
-        return fig
-# Build the long format DataFrame for locations
-long_df = build_long_location_df(df)
+        fig.update_layout(
+            height=650,
+            margin=dict(l=40, r=20, t=60, b=40))
+        return fig, count_text
 # Define the layout of the app
 app.layout = dbc.Container(
     [
@@ -295,7 +356,7 @@ app.layout = dbc.Container(
         ),
         dbc.Tabs(
             id="main-tabs",
-            active_tab="primary-tab",
+            active_tab="tab-distribution",
             children=[
                 dbc.Tab(
                     label="Total Distribution", 
@@ -351,12 +412,17 @@ app.layout = dbc.Container(
                                 ),
                                 dbc.Col(
                                     [
+                                    dcc.Store(id="day-state", data={"single": 1, "range": [1, 31]}),
                                     html.Div("Day Selector"),
-                                    dcc.RangeSlider(
-                                        id="day-slider",
-                                        min=1, max=31, step=1,
-                                        value=[1, 31],
-                                        marks={1: "1", 8: "8", 15: "15", 22: "22", 31: "31"},
+                                    html.Div(
+                                        id="day-slider-container",
+                                        children=dcc.RangeSlider(
+                                            id="day-slider",
+                                            min=1, max=31, step=1,
+                                            value=[1, 31],
+                                            marks={1: "1", 8: "8", 15: "15", 22: "22", 31: "31"},
+                                            tooltip={"placement":"bottom", "always_visible":False},
+                                        )
                                     ),
                                     html.Div("Mode", style={"marginTop": "10px"}),
                                     dcc.RadioItems(
@@ -367,7 +433,7 @@ app.layout = dbc.Container(
                                         ],
                                         value="range",
                                         inline=True,
-                                        style={"marginRight": "6px", "marginLeft": "12px"},
+                                        inputStyle={"marginRight": "6px", "marginLeft": "12px"},
                                         ),
                                         html.Div(id="point-count", style={"fontWeight": "600", "marginTop": "8px"}),
                                     ],
@@ -382,8 +448,9 @@ app.layout = dbc.Container(
             ],
         ),
     ],
+    fluid=True
 )    
 
-fluid=True,
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8050, debug=True)
