@@ -346,7 +346,7 @@ app.layout = dbc.Container(
 # Dashboard Title and Last Updated Info
         dcc.Markdown(f"""
             #### Tracking Dashboard
-            **Version:** 0.1.1
+            **Version:** 0.1.2
             **Last Updated:** {last_updated},"""
         ),
         dcc.Interval(
